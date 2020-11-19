@@ -1,65 +1,75 @@
-cmake_minimum_required(VERSION 3.12)
+set(LIBUUU_HEADERS
+		backfile.h
+		buffer.h
+		cmd.h
+		config.h
+		fastboot.h
+		fat.h
+		ffu_format.h
+		hidreport.h
+		http.h
+		libcomm.h
+		liberror.h
+		libuuu.h
+		rominfo.h
+		sdp.h
+		sdps.h
+		sparse.h
+		sparse_format.h
+		tar.h
+		trans.h
+		zip.h
+		)
+set(LIBUUU_SOURCES
+		buffer.cpp
+		cmd.cpp
+		config.cpp
+		error.cpp
+		fastboot.cpp
+		fat.cpp
+		hidreport.cpp
+		http.cpp
+		notify.cpp
+		rominfo.cpp
+		sdp.cpp
+		sdps.cpp
+		sparse.cpp
+		tar.cpp
+		trans.cpp
+		usbhotplug.cpp
+		version.cpp
+		zip.cpp
+		)
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_SKIP_RPATH ON)
+configure_file(gitversion.h.in "${CMAKE_CURRENT_BINARY_DIR}/gitversion.h" @ONLY)
 
-find_package(BZip2 REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBUSB REQUIRED libusb-1.0>=1.0.16)
-pkg_check_modules(LIBZIP REQUIRED libzip)
+if(ENABLE_OPENSSL)
+	find_package(OpenSSL)
+endif()
 find_package(Threads)
 
-if (STATIC)
-set(OPENSSL_USE_STATIC_LIBS TRUE)
-endif()
-
-find_package(OpenSSL)
-
-if(OPENSSL_FOUND)
-set(UUUSSL "-DUUUSSL")
-set(UUUOPENSLL_INCLUDE_DIR ${OPENSSL_INCLUDE_DIR})
-endif()
-
-include_directories(${LIBUSB_INCLUDE_DIRS} ${UUUOPENSLL_INCLUDE_DIR} include)
-
-
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wstrict-aliasing -Wextra ${UUUSSL}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 ${UUUSSL}")
-
-set(SOURCES
-	error.cpp
-	buffer.cpp
-	cmd.cpp
-	config.cpp
-	notify.cpp
-	sdps.cpp
-	trans.cpp
-	usbhotplug.cpp
-	version.cpp
-	sdp.cpp
-	gitversion.h
-	fastboot.cpp
-	zip.cpp
-	fat.cpp
-	tar.cpp
-	rominfo.cpp
-	http.cpp
-	hidreport.cpp
-	sparse.cpp
-)
-
-set(generated_files_dir "${CMAKE_BINARY_DIR}/libuuu/gen")
-set(gitversion_h "${generated_files_dir}/gitversion.h")
-
-add_custom_command(
-	OUTPUT gitversion.h
-	PRE_BUILD
-	COMMAND mkdir -p ${generated_files_dir}
-	COMMAND sh -c 'cd ${CMAKE_CURRENT_SOURCE_DIR} && rm -f ${gitversion_h} && ./gen_ver.sh "${gitversion_h}.tmp" && mv -f "${gitversion_h}.tmp" "${gitversion_h}"'
-
-)
-include_directories(${generated_files_dir})
-
-#add_library( uuc SHARED ${SOURCES} ))
-add_library( uuc_s STATIC ${SOURCES} )
+add_library(libuuu ${LIBUUU_HEADERS} ${LIBUUU_SOURCES})
+target_compile_features(libuuu PUBLIC cxx_std_17)
+target_compile_definitions(libuuu
+		PUBLIC
+		$<$<CXX_COMPILER_ID:MSVC>:_HAS_STD_BYTE=0>
+		$<$<BOOL:${OPENSSL_FOUND}>:UUUSSL>
+		)
+target_include_directories(libuuu
+		PUBLIC
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+		${ZLIB_INCLUDE_DIRS}
+		${BZIP2_INCLUDE_DIRS}
+		${LIBZIP_INCLUDE_DIRS}
+		${LIBUSB_INCLUDE_DIRS}
+		$<$<BOOL:${OPENSSL_FOUND}>:${OPENSSL_LIBRARIES}>
+		)
+target_link_libraries(libuuu
+		PUBLIC
+		${ZLIB_LIBRARIES}
+		${BZIP2_LIBRARIES}
+		${LIBZIP_LIBRARIES}
+		${LIBUSB_LIBRARIES}
+		$<$<BOOL:${OPENSSL_FOUND}>:${OPENSSL_INCLUDE_DIR}>
+		)

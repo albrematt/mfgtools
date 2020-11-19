@@ -1,9 +1,9 @@
 [submodule "libusb"]
 	path = libusb
-	url = https://github.com/nxpfrankli/libusb.git
+	url = https://github.com/albrematt/libusb.git
 [submodule "zlib"]
 	path = zlib
-	url = https://github.com/madler/zlib.git
+	url = https://github.com/albrematt/zlib.git
 [submodule "bzip2"]
 	path = bzip2
-	url = https://github.com/enthought/bzip2-1.0.6
+	url = https://github.com/albrematt/bzip2.git
